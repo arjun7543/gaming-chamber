@@ -1,134 +1,166 @@
 'use client';
-
-import { useState } from 'react'; // Added useState
-import { motion } from 'framer-motion';
-import { ArrowRight, ChevronDown } from 'lucide-react';
-
-// --- IMPORTS ---
-import HeroScene from '@/components/3d/HeroScene';
+import { useRef } from 'react';
+import { motion, useScroll, useTransform, Variants } from 'framer-motion';
+import { Canvas, useFrame } from '@react-three/fiber';
+import { OrbitControls, useGLTF, Environment, Float } from '@react-three/drei';
+import Link from 'next/link';
+import { ArrowRight, Play, Crosshair, Shield, Zap } from 'lucide-react';
 import TournamentGrid from '@/components/sections/TournamentGrid';
 import Features from '@/components/sections/Features';
-import JoinNetwork from '@/components/sections/JoinNetwork';
-import Footer from '@/components/layout/Footer';
-import AuthModal from '@/components/auth/AuthModal'; // Make sure this file exists!
 
-// --- ANIMATION CONFIG ---
-const glitchVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    x: [0, -1, 1, -0.5, 0.5, 0],
-    skewX: [0, 2, -2, 1, 0],
-    textShadow: ["0px 0px 0px rgba(0,0,0,0)", "-2px 0px 0px rgba(255,0,0,0.5), 2px 0px 0px rgba(0,255,255,0.5)", "0px 0px 0px rgba(0,0,0,0)"],
-    transition: {
-      x: { repeat: Infinity, duration: 0.2, repeatType: "mirror", ease: "linear" },
-      skewX: { repeat: Infinity, duration: 0.25, repeatType: "mirror", ease: "linear" },
-      textShadow: { repeat: Infinity, duration: 0.3, repeatType: "mirror" }
+// --- 3D MODEL COMPONENT ---
+function HelmetModel() {
+  const { scene } = useGLTF('https://vazxmixjsiawhamofees.supabase.co/storage/v1/object/public/models/helmet/model.gltf');
+  const helmetRef = useRef<any>(null);
+
+  useFrame((state) => {
+    if (helmetRef.current) {
+      helmetRef.current.rotation.y = state.clock.getElapsedTime() * 0.2;
+      helmetRef.current.rotation.x = Math.sin(state.clock.getElapsedTime() * 0.5) * 0.1;
     }
-  },
-  hover: { scale: 1.1, color: '#00ff88', textShadow: "0px 0px 15px rgba(0,255,136,1)", transition: { duration: 0.1 } }
-};
+  });
 
-const InteractiveLetter = ({ letter, index }: { letter: string, index: number }) => {
-  const randomDuration = 0.2 + Math.random() * 0.1;
+  return (
+    <Float speed={2} rotationIntensity={0.5} floatIntensity={0.5}>
+      <primitive object={scene} ref={helmetRef} scale={1.8} />
+    </Float>
+  );
+}
+
+// --- GLITCH TEXT COMPONENT (FIXED TYPES) ---
+const GlitchText = ({ text }: { text: string }) => {
+  const glitchVariants: Variants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      x: [0, -2, 2, -1, 1, 0], // Glitch jitter
+      skewX: [0, 10, -10, 5, -5, 0],
+      textShadow: [
+        "0px 0px 0px rgba(0,255,136,0)",
+        "-2px 0px 0px rgba(0,255,136,0.5)",
+        "2px 0px 0px rgba(255,0,255,0.5)",
+        "0px 0px 0px rgba(0,255,136,0)"
+      ],
+      transition: {
+        x: {
+          repeat: Infinity,
+          duration: 0.2,
+          repeatType: "mirror" as const, // FIX: Added "as const"
+          ease: "linear",
+        },
+        skewX: {
+          repeat: Infinity,
+          duration: 0.2,
+          repeatType: "mirror" as const, // FIX: Added "as const"
+          ease: "linear",
+        },
+        textShadow: {
+          repeat: Infinity,
+          duration: 0.2,
+          repeatType: "mirror" as const, // FIX: Added "as const"
+        }
+      }
+    },
+    hover: {
+      scale: 1.05,
+      color: "#00ff88",
+      textShadow: "0 0 10px #00ff88"
+    }
+  };
+
   return (
     <motion.span
       variants={glitchVariants}
       initial="hidden"
       animate="visible"
       whileHover="hover"
-      whileTap="hover"
-      transition={{
-        x: { repeat: Infinity, duration: randomDuration, repeatType: "mirror" },
-        skewX: { repeat: Infinity, duration: randomDuration + 0.05, repeatType: "mirror" },
-        opacity: { duration: 0.5, delay: index * 0.05 }
-      }}
-      className="inline-block cursor-pointer relative"
+      className="inline-block cursor-default"
     >
-      {letter === " " ? "\u00A0" : letter}
+      {text}
     </motion.span>
   );
 };
 
-const WordWrapper = ({ text, className }: { text: string, className?: string }) => (
-  <div className={`flex justify-center flex-wrap ${className} pointer-events-auto`}>
-    {text.split("").map((char, i) => (
-      <InteractiveLetter key={`${char}-${i}`} index={i} letter={char} />
-    ))}
-  </div>
-);
-
 export default function Home() {
-  // --- STATE FOR AUTH MODAL ---
-  const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const containerRef = useRef(null);
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start start", "end end"]
+  });
 
-  const scrollToTournaments = () => {
-    document.getElementById('tournaments')?.scrollIntoView({ behavior: 'smooth' });
-  };
+  const y = useTransform(scrollYProgress, [0, 1], ["0%", "50%"]);
+  const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
 
   return (
-    <main className="relative w-full min-h-screen bg-black overflow-x-hidden"> 
+    <main className="bg-black min-h-screen text-white selection:bg-green-500/30 overflow-x-hidden">
       
-      {/* 1. BACKGROUND LAYER (Fixed Position) */}
-      <div className="fixed inset-0 z-0">
-        <HeroScene />
-      </div>
-
-      {/* 2. CONTENT LAYER */}
-      <div className="relative z-10 w-full pointer-events-none">
+      {/* --- HERO SECTION --- */}
+      <section ref={containerRef} className="relative h-screen flex flex-col items-center justify-center overflow-hidden">
         
-        {/* FLOATING LOGIN BUTTON (Top Right) */}
-        <div className="fixed top-6 right-6 z-50 pointer-events-auto">
-            <button 
-                onClick={() => setIsAuthOpen(true)}
-                className="px-4 py-2 md:px-6 md:py-2 bg-white/5 backdrop-blur-md border border-white/10 rounded-full text-[10px] md:text-xs font-bold uppercase tracking-widest text-white hover:bg-green-500/20 hover:border-green-500 hover:text-green-400 transition-all shadow-[0_0_20px_rgba(0,0,0,0.5)]"
-            >
-                System Login
-            </button>
+        {/* BACKGROUND GRID */}
+        <div className="absolute inset-0 z-0 opacity-20" 
+             style={{ backgroundImage: 'linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px)', backgroundSize: '40px 40px' }}>
         </div>
 
-        {/* HERO SECTION */}
-        <section className="h-screen w-full flex flex-col items-center justify-center text-center px-4 pt-16 md:pt-0">
-             <div className="flex flex-col md:flex-row gap-2 md:gap-8 items-center justify-center mb-6 w-full max-w-[95vw]">
-              <WordWrapper text="GAMING" className="text-5xl md:text-8xl font-black tracking-tighter text-gray-200" />
-              <WordWrapper text="CHAMBER" className="text-5xl md:text-8xl font-black tracking-tighter text-[#a855f7]" />
+        {/* 3D SCENE */}
+        <div className="absolute inset-0 z-10 pointer-events-none">
+          <Canvas camera={{ position: [0, 0, 5], fov: 45 }}>
+             <ambientLight intensity={0.5} />
+             <directionalLight position={[10, 10, 5]} intensity={1} color="#00ff88" />
+             <directionalLight position={[-10, -10, -5]} intensity={1} color="#ff00ff" />
+             <Environment preset="city" />
+             <HelmetModel />
+          </Canvas>
+        </div>
+
+        {/* HERO CONTENT */}
+        <motion.div 
+          style={{ y, opacity }}
+          className="relative z-20 text-center space-y-6 max-w-4xl px-4 mt-32"
+        >
+            <div className="flex items-center justify-center gap-2 mb-4">
+               <span className="px-3 py-1 bg-green-500/10 border border-green-500/20 text-green-400 text-xs font-mono rounded-full uppercase tracking-widest animate-pulse">
+                  System Online
+               </span>
             </div>
 
-            <motion.p 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1, textShadow: ["0 0 5px #00ff88", "0 0 20px #00ff88", "0 0 5px #00ff88"] }}
-              transition={{ opacity: { duration: 1 }, textShadow: { repeat: Infinity, duration: 2, ease: "easeInOut" } }}
-              className="mt-4 text-sm md:text-2xl text-white font-light tracking-[0.2em] pointer-events-auto max-w-[90%] md:max-w-none leading-relaxed text-center"
-            >
-              Enter the Chamber. Compete. Conquer.
-            </motion.p>
-            
-            <button onClick={scrollToTournaments} className="pointer-events-auto group mt-12 flex items-center gap-3 px-6 py-3 md:px-8 md:py-4 bg-white/5 backdrop-blur-md border border-white/10 rounded-full hover:bg-green-500/20 hover:border-green-500 transition-all duration-300">
-              <span className="font-bold tracking-wider text-xs md:text-base group-hover:text-green-400 transition-colors">EXPLORE TOURNAMENTS</span>
-              <ArrowRight className="w-4 h-4 md:w-5 group-hover:translate-x-1 group-hover:text-green-400 transition-all" />
-            </button>
-            
-            <motion.div 
-                animate={{ y: [0, 10, 0] }}
-                transition={{ repeat: Infinity, duration: 2 }}
-                className="absolute bottom-10 text-white/50"
-            >
-                <ChevronDown className="w-6 h-6 md:w-8" />
-            </motion.div>
-        </section>
+            <h1 className="text-5xl md:text-8xl font-black uppercase tracking-tighter leading-none mix-blend-difference">
+              Enter The <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 via-emerald-500 to-green-600">
+                <GlitchText text="Chamber" />
+              </span>
+            </h1>
 
-        <TournamentGrid />
-        <Features />
-        <JoinNetwork />
-        <Footer />
-        
-        {/* --- AUTH MODAL (Controlled by State) --- */}
-        <div className="pointer-events-auto">
-            <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
-        </div>
+            <p className="text-gray-400 text-lg md:text-xl max-w-2xl mx-auto font-light tracking-wide">
+              The next-generation eSports ecosystem. Compete in high-stakes tournaments, 
+              track your stats, and get paid instantly.
+            </p>
 
-      </div>
+            <div className="flex flex-col md:flex-row gap-4 justify-center items-center mt-8">
+               <button onClick={() => document.getElementById('tournaments')?.scrollIntoView({ behavior: 'smooth' })} className="group relative px-8 py-4 bg-white text-black font-bold uppercase tracking-widest hover:bg-green-400 transition-colors">
+                  <span className="relative z-10 flex items-center gap-2">
+                    Start Mission <Play className="w-4 h-4 fill-current" />
+                  </span>
+                  <div className="absolute inset-0 bg-green-500 blur-lg opacity-0 group-hover:opacity-50 transition-opacity" />
+               </button>
+               
+               <Link href="/dashboard" className="px-8 py-4 bg-transparent border border-white/20 text-white font-bold uppercase tracking-widest hover:bg-white/10 transition-colors flex items-center gap-2">
+                  Operator Login
+               </Link>
+            </div>
+        </motion.div>
+      </section>
+
+      {/* --- SECTIONS --- */}
+      <TournamentGrid />
+      <Features />
+      
+      {/* FOOTER */}
+      <footer className="border-t border-white/10 py-12 text-center text-gray-600 text-xs uppercase tracking-widest">
+        <p>Gaming Chamber © 2026 // System Architecture v1.0</p>
+      </footer>
+
     </main>
   );
 }
