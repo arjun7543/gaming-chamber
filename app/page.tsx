@@ -10,7 +10,7 @@ import Features from '@/components/sections/Features';
 
 // --- 3D MODEL COMPONENT ---
 function HelmetModel() {
-  const { scene } = useGLTF('https://vazxmixjsiawhamofees.supabase.co/storage/v1/object/public/models/helmet/model.gltf');
+  const { scene } = useGLTF('https://vazxmixjsiawhamofees.supabase.co/storage/v1/object/public/models/DamagedHelmet.gltf');
   const helmetRef = useRef<any>(null);
 
   useFrame((state) => {
