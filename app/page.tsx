@@ -10,7 +10,7 @@ import Features from '@/components/sections/Features';
 
 // --- 3D MODEL COMPONENT ---
 function HelmetModel() {
-  const { scene } = useGLTF('https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Models@master/2.0/DamagedHelmet/glTF-Binary/DamagedHelmet.gltf');
+  const { scene } = useGLTF('/DamagedHelmet.gltf');
   const helmetRef = useRef<any>(null);
 
   useFrame((state) => {
