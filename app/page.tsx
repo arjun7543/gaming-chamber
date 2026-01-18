@@ -28,13 +28,17 @@ function HelmetModel() {
 }
 
 // --- GLITCH TEXT COMPONENT (FIXED TYPES) ---
+// Inside app/page.tsx
+
+// ... imports
+
 const GlitchText = ({ text }: { text: string }) => {
   const glitchVariants: Variants = {
     hidden: { opacity: 0, y: 20 },
     visible: {
       opacity: 1,
       y: 0,
-      x: [0, -2, 2, -1, 1, 0], // Glitch jitter
+      x: [0, -2, 2, -1, 1, 0],
       skewX: [0, 10, -10, 5, -5, 0],
       textShadow: [
         "0px 0px 0px rgba(0,255,136,0)",
@@ -46,19 +50,19 @@ const GlitchText = ({ text }: { text: string }) => {
         x: {
           repeat: Infinity,
           duration: 0.2,
-          repeatType: "mirror" as const, // FIX: Added "as const"
+          repeatType: "mirror" as const, // <--- THIS IS THE FIX
           ease: "linear",
         },
         skewX: {
           repeat: Infinity,
           duration: 0.2,
-          repeatType: "mirror" as const, // FIX: Added "as const"
+          repeatType: "mirror" as const, // <--- THIS IS THE FIX
           ease: "linear",
         },
         textShadow: {
           repeat: Infinity,
           duration: 0.2,
-          repeatType: "mirror" as const, // FIX: Added "as const"
+          repeatType: "mirror" as const, // <--- THIS IS THE FIX
         }
       }
     },
