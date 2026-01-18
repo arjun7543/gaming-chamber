@@ -9,8 +9,11 @@ import TournamentGrid from '@/components/sections/TournamentGrid';
 import Features from '@/components/sections/Features';
 
 // --- 3D MODEL COMPONENT ---
+// Inside app/page.tsx
+
 function HelmetModel() {
-  const { scene } = useGLTF('https://vazxmixjsiawhamofees.supabase.co/storage/v1/object/public/models/DamagedHelmet.gltf');
+  // CHANGED: Using the stable GitHub link for the "Damaged Helmet" model
+  const { scene } = useGLTF('https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/DamagedHelmet/glTF-Binary/DamagedHelmet.glb');
   const helmetRef = useRef<any>(null);
 
   useFrame((state) => {
