@@ -13,7 +13,7 @@ import Features from '@/components/sections/Features';
 
 function HelmetModel() {
   // CHANGED: Using the stable GitHub link for the "Damaged Helmet" model
-  const { scene } = useGLTF('https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/DamagedHelmet/glTF-Binary/DamagedHelmet.glb');
+  const { scene } = useGLTF('https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/DamagedHelmet/glTF-Binary/DamagedHelmet.gltf');
   const helmetRef = useRef<any>(null);
 
   useFrame((state) => {
